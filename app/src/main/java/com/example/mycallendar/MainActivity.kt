@@ -1,33 +1,21 @@
 package com.example.mycallendar
 
-import android.R
-import android.app.DatePickerDialog
 import android.os.Build
-import java.time.LocalDate
-import java.text.SimpleDateFormat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,19 +27,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.text.style.TextAlign
-import java.util.Locale
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
 import com.example.mycallendar.ui.theme.MyCallendarTheme
-import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
+
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -70,6 +58,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyCallendar() {
     var selectedDate by remember { mutableStateOf<Long?>(null) }
@@ -84,7 +73,9 @@ fun MyCallendar() {
                 onClick = {
                     showDatePicker = true
                 },
-                modifier = Modifier.padding(top = 50.dp).size(150.dp),
+                modifier = Modifier
+                    .padding(top = 50.dp)
+                    .size(150.dp),
                 shape = CircleShape
             ) {
                 Text(
@@ -109,7 +100,7 @@ fun MyCallendar() {
                 )
             }
             if (selectedDate != null) {
-                Text(text = formatDate(selectedDate!!))
+                DaysUntil(selectedDate!!)
             }
         }
     }
@@ -122,6 +113,7 @@ fun MyDatePicker(
     onDataSelected : (Long?) -> Unit,
     initialDate : Long?
 ) {
+
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate
     )
@@ -155,6 +147,31 @@ fun MyDatePicker(
 
 }
 
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DaysUntil(
+    selectedDateMillis: Long
+) {
+    val instant = Instant.ofEpochMilli(selectedDateMillis)
+    val zoneId = ZoneId.of("Europe/Moscow")
+    val localDate = instant.atZone(zoneId).toLocalDate()
+    val daysUntil = ChronoUnit.DAYS.between(localDate, LocalDate.now())
+    val dateText = formatDate(selectedDateMillis)
+    val daysUntilPositive = abs(daysUntil.toInt())
+    val text = when {
+        daysUntil.toInt() == 0 -> "Сегодня"
+        daysUntil.toInt() < 0 -> "До этого дня $daysUntilPositive дней"
+        else -> "Этот день был $daysUntilPositive дней назад"
+    }
+
+    Column {
+        Text("Выбранная дата: $dateText")
+        Text(text=text)
+    }
+
+
+}
 fun formatDate(dateMillis : Long) : String {
     val date = Date(dateMillis)
     val format = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
